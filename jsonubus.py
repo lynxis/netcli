@@ -3,6 +3,8 @@
 import json
 import jsonrpclib
 import logging
+from datetime import datetime
+from datetime import timedelta
 
 class Ubus(object):
     def list(self, path):
@@ -21,16 +23,19 @@ class JsonUbus(Ubus):
         self.__session = None
         self.__user = user
         self.__password = password
-        self.__timeout = None
+        self.__timeout = timedelta(seconds=1)
         self.__expires = None
+        self.__lastcalled = datetime.now()
+        self.__lastused = datetime(year=1970, month=1, day=1)
         self.logger = logging.getLogger('jsonubus')
 
     def session(self):
         if self.__session == None:
             ret = self._server.call("00000000000000000000000000000000", "session", "login", {"username": self.__user, "password": self.__password})
             self.__session = ret[1]['ubus_rpc_session']
-            self.__timeout = ret[1]['timeout']
+            self.__timeout = timedelta(seconds=ret[1]['timeout'])
             self.__expires = ret[1]['expires']
+            self.__lastused = datetime.now()
             self.logger.warn('Connected with %s' % self.url)
         return self.__session
 
@@ -40,7 +45,14 @@ class JsonUbus(Ubus):
         else:
             return self._server.list()
 
+    def _handle_session_timeout(self):
+        self.logger.warn("Handle Session Timeout: %s + %s < %s", self.__lastused, self.__timeout, datetime.now())
+        if (self.__lastused + self.__timeout) < datetime.now():
+            self.__session = None
+
     def call(self, path, func, params=None):
+        self._handle_session_timeout()
+        self.__lastused = datetime.now()
         if params:
             if type(params) is not dict:
                 raise RuntimeError("Wrong params type. %s != dict" % type(params))
