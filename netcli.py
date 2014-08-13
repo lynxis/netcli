@@ -3,6 +3,7 @@
 from jsonubus import JsonUbus
 import readline
 import logging
+import sys
 
 LOG = logging.getLogger('netcli')
 
@@ -33,7 +34,16 @@ class CliApp(object):
         # ctrl D + exit
         line = ''
         while line != 'exit':
-            line = input(self.prompt)
+            try:
+                line = input(self.prompt)
+            except EOFError:
+                # otherwise console will be on the same line
+                print()
+                sys.exit(0)
+            except KeyboardInterrupt:
+                print()
+                sys.exit(0)
+
             self.dispatcher(line)
 
     def completer(self, text, state):
@@ -52,7 +62,7 @@ class CliApp(object):
             else:
                 self.__completer = self.__commands
         try:
-            return self.__completer[state]
+            return self.__completer[state] + " "
         except IndexError:
             return None
 
