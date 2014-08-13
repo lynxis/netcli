@@ -10,7 +10,7 @@ class Ubus(object):
     def list(self, path):
         raise NotImplementedError
 
-    def call(self, path, func, params):
+    def call(self, path, func, **kwargs):
         raise NotImplementedError
 
     def subscribe(self, path):
@@ -50,12 +50,12 @@ class JsonUbus(Ubus):
         if (self.__lastused + self.__timeout) < datetime.now():
             self.__session = None
 
-    def call(self, path, func, params=None):
+    def call(self, path, func, **kwargs):
         self._handle_session_timeout()
         self.__lastused = datetime.now()
-        if params:
-            if type(params) is not dict:
-                raise RuntimeError("Wrong params type. %s != dict" % type(params))
-            self._server.call(self.session(), path, func, params)
-        else:
-            self._server.call(self.session(), path, func, {})
+        return self._server.call(self.session(), path, func, kwargs)
+
+if __name__ == '__main__':
+    js = JsonUbus(url="http://localhost:8080/ubus", user='root', password='root')
+    print(js.call('uci', 'configs'))
+    print(js.call('uci', 'get', config='tests'))
