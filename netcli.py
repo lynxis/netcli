@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
 
-from .jsonubus import JsonUbus
+from jsonubus import JsonUbus
+import readline
+import logging
+
+LOG = logging.getLogger('netcli')
 
 class CliApp(object):
     def __init__(self):
-        self.__prompt = None
+        self.__prompt = "netcli#>"
         self.__command = {}
         self.__commands = []
         self.__completer = []
+        self.register_command('help', self)
+        self.register_command('?', self)
+        self.register_command('verbose', self)
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer(self.completer)
+
+    def error(self, message):
+        print(message)
 
     @property
     def prompt(self):
@@ -22,7 +34,7 @@ class CliApp(object):
         line = ''
         while line != 'exit':
             line = input(self.prompt)
-            self.dispatch(line)
+            self.dispatcher(line)
 
     def completer(self, text, state):
         # first complete commands
@@ -31,27 +43,46 @@ class CliApp(object):
             if text:
                 split = text.split(' ')
                 if len(split) <= 1:
-                    self.__completer = [s for s in self.__commands if text.startswith(s)]
+                    self.__completer = [s for s in self.__commands if s.startswith(split[0])]
                 else:
-                    self.__completer = self.__command[split[0]].complete(text)
+                    if split[0] in self.__command:
+                        self.__completer = self.__command[split[0]].complete(text)
+                    else:
+                        return None
             else:
                 self.__completer = self.__commands
-
         try:
             return self.__completer[state]
         except IndexError:
             return None
 
-    def dispatch(self, line):
+    def dispatcher(self, line):
         split = line.split(' ')
         cmd = split[0]
         argument = split[1:]
         if cmd in self.__command:
             self.__command[cmd].dispatch(cmd, argument)
 
+        else:
+            self.error("No such command. See help or ?")
+
     def register_command(self, name, cmdclass):
+        # TODO: move this into class var of SubCommand
         self.__command[name] = cmdclass
         self.__commands.append(name)
+
+    def dispatch(self, cmd, arg):
+        """ self implemented commands """
+        if cmd == "help" or cmd == "?":
+            self.help()
+        elif cmd == "verbose":
+            self.verbose()
+
+    def help(self):
+        print("available commands : %s" % self.__commands)
+
+    def verbose(self):
+        logging.basicConfig()
 
 class Cli(CliApp):
     def __init__(self, url, user, password):
@@ -62,6 +93,7 @@ class Cli(CliApp):
         self.__ubus = JsonUbus(url, user, password)
 
 class SubCommand(object):
+    # todo class variables
     def complete(self, text):
         """ returns an array of possible extensions
             text is "cmd f"
@@ -78,3 +110,5 @@ class Ubus(SubCommand):
 class Uci(SubCommand):
     pass
 
+if __name__ == '__main__':
+    Cli(url='http://127.0.0.1:8080/ubus', user='root', password='yipyip').input_loop()
