@@ -50,7 +50,7 @@ class CliApp(object):
         # first complete commands
         # second delegate completer
         if state == 0:
-            if text:
+            if type(text) == str:
                 split = text.split(' ')
                 if len(split) <= 1:
                     self.__completer = [s for s in self.__commands if s.startswith(split[0])]
@@ -71,7 +71,7 @@ class CliApp(object):
         cmd = split[0]
         argument = split[1:]
         if cmd in self.__command:
-            self.__command[cmd].dispatch(cmd, argument)
+            self.__command[cmd].dispatch(cmd, line[len(cmd)+1:])
 
         else:
             self.error("No such command. See help or ?")
