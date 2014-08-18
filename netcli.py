@@ -4,6 +4,7 @@ from jsonubus import JsonUbus
 import readline
 import logging
 import sys
+import argparse
 
 LOG = logging.getLogger('netcli')
 
@@ -101,6 +102,7 @@ class Cli(CliApp):
         self.__user = user
         self.__password = password
         self.__ubus = JsonUbus(url, user, password)
+        self.register_command('ubus', Ubus(self.__ubus))
 
 class SubCommand(object):
     # todo class variables
@@ -115,7 +117,28 @@ class SubCommand(object):
         pass
 
 class Ubus(SubCommand):
-    pass
+    """ Ubus calls foo """
+
+    def __init__(self, ubus):
+        self.__ubus = ubus
+        self.__objects = {}
+
+    def dispatch(self, arguments):
+        # TODO: argparse
+        argp = argparse.ArgumentParser()
+        argp.add_argument()
+        cmd = arguments[0]
+        obj = arguments[1]
+        func = arguments[2]
+        arg = arguments[3]
+
+        if cmd == 'call':
+            self.__ubus.call(obj, func, arg)
+
+    def complete(self, text):
+        split = text.split(' ')
+        if len(split) == 1:
+            return [s for s in ['call', 'list'] if s.startswith(split[0])]
 
 class Uci(SubCommand):
     pass
