@@ -86,8 +86,7 @@ class CliApp(object):
         cmd = split[0]
         argument = split[1:]
         if cmd in self.__command:
-            self.__command[cmd].dispatch(cmd, line[len(cmd)+1:])
-
+            self.__command[cmd].dispatch(cmd, argument)
         else:
             self.error("No such command. See help or ?")
 
@@ -127,7 +126,9 @@ class SubCommand(object):
         """
         pass
 
-    def dispatch(self, arguments):
+    def dispatch(self, cmd, arguments):
+        """ arguements is []
+        """
         pass
 
 class Ubus(SubCommand):
