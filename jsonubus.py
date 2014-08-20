@@ -67,10 +67,18 @@ class JsonUbus(Ubus):
         if (self.__lastused + self.__timeout) < datetime.now():
             self.__session = None
 
-    def call(self, ubus_path, ubus_func, **kwargs):
+    def call(self, ubus_path, ubus_method, **kwargs):
         self._handle_session_timeout()
         self.__lastused = datetime.now()
-        return self._server.call(self.session(), ubus_path, ubus_func, kwargs)
+        self.logger.debug("call {} {} {} {}".format(self.session(), ubus_path, ubus_method, kwargs))
+        return self._server.call(self.session(), ubus_path, ubus_method, kwargs)
+
+    def callp(self, ubus_path, ubus_method, **kwargs):
+        retcode, response = self.call(ubus_path, ubus_method, **kwargs)
+        if retcode != 0:
+            print("Fail {}".format(MessageStatus[retcode]))
+        else:
+            print(response)
 
 if __name__ == '__main__':
     js = JsonUbus(url="http://192.168.122.175/ubus", user='root', password='yipyip')
