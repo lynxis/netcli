@@ -8,6 +8,20 @@ import argparse
 
 LOG = logging.getLogger('netcli')
 
+def convert_to_dict(argumentlist):
+    """ convert a list into a dict
+        e.g. ['help=me', 'foo'='bar'] => {'help': 'me', 'foo':'bar'}
+    """
+    def gen_dict(keyval):
+        pos = keyval.find('=')
+        if pos == -1:
+            raise RuntimeError("Invalid argument {}".format(keyval))
+        return {keyval[:pos]:keyval[pos+1:]}
+    converted = {}
+    for i in [gen_dict(part) for part in argumentlist]:
+        converted.update(i)
+    return converted
+
 class CliApp(object):
     def __init__(self):
         self.__prompt = "netcli#>"
