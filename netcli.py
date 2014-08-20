@@ -133,27 +133,52 @@ class SubCommand(object):
 
 class Ubus(SubCommand):
     """ Ubus calls foo """
+    _commands = ['call', 'list']
 
     def __init__(self, ubus):
         self.__ubus = ubus
         self.__objects = {}
+        self.__paths = []
 
-    def dispatch(self, arguments):
-        # TODO: argparse
-        argp = argparse.ArgumentParser()
-        argp.add_argument()
-        cmd = arguments[0]
-        obj = arguments[1]
-        func = arguments[2]
-        arg = arguments[3]
+    def update_paths(self):
+        self.__paths = self.__ubus.list()
 
-        if cmd == 'call':
-            self.__ubus.call(obj, func, arg)
+    def dispatch(self, cmd, arguments):
+        # func obj <opt args depends on func type>
+        argp = argparse.ArgumentParser(prog="ubus", description='Call ubus functions')
+        argp.add_argument('func', nargs=1, type=str, help='list or call', choices=self._commands)
+        argp.add_argument('path', nargs='?', type=str, help='ubus path')
+        argp.add_argument('method', nargs='?', type=str, help='object function')
+        self.update_paths()
+        parsed, leftover = argp.parse_known_args(arguments)
+        if parsed.func[0] == "call":
+            if parsed.path == None:
+                print('Path is missing')
+            elif parsed.path not in self.__paths:
+                print('Unknown path %s' % parsed.path)
+            elif parsed.method is None:
+                print('No method given!')
+            else:
+                self.__ubus.callp(parsed.path, parsed.method, **convert_to_dict(leftover))
+        elif parsed.func[0] == 'list':
+            if parsed.path:
+                print(self.__ubus.list(parsed.path))
+            else:
+                print(self.__ubus.list())
+        else:
+            return 'Unknown ubus method {}'.format(parsed.func)
 
     def complete(self, text):
         split = text.split(' ')
+        if len(split) > 1 and not split[0] in self._commands:
+            # unknown command
+            return
         if len(split) == 1:
-            return [s for s in ['call', 'list'] if s.startswith(split[0])]
+            return [s for s in self._commands if s.startswith(split[0])]
+        elif len(split) == 2:
+            return [s for s in self.__objects if s.startswith(split[1])]
+        elif len(split) == 3:
+            pass
 
 class Uci(SubCommand):
     pass
