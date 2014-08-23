@@ -66,12 +66,12 @@ class CliApp(object):
         # second delegate completer
         if state == 0:
             if type(text) == str:
-                split = text.split(' ')
+                split = readline.get_line_buffer().split(' ')
                 if len(split) <= 1:
                     self.__completer = [s for s in self.__commands if s.startswith(split[0])]
                 else:
                     if split[0] in self.__command:
-                        self.__completer = self.__command[split[0]].complete(text)
+                        self.__completer = self.__command[split[0]].complete(split[1:])
                     else:
                         return None
             else:
@@ -115,6 +115,7 @@ class Cli(CliApp):
         self.__user = user
         self.__password = password
         self.__ubus = JsonUbus(url, user, password)
+        self.__ubus.list()
         self.register_command('ubus', Ubus(self.__ubus))
 
 class SubCommand(object):
@@ -137,7 +138,6 @@ class Ubus(SubCommand):
 
     def __init__(self, ubus):
         self.__ubus = ubus
-        self.__objects = {}
         self.__paths = []
 
     def update_paths(self):
@@ -152,11 +152,11 @@ class Ubus(SubCommand):
         self.update_paths()
         parsed, leftover = argp.parse_known_args(arguments)
         if parsed.func[0] == "call":
-            if parsed.path == None:
+            if not parsed.path:
                 print('Path is missing')
             elif parsed.path not in self.__paths:
                 print('Unknown path %s' % parsed.path)
-            elif parsed.method is None:
+            elif not parsed.method:
                 print('No method given!')
             else:
                 self.__ubus.callp(parsed.path, parsed.method, **convert_to_dict(leftover))
@@ -168,15 +168,19 @@ class Ubus(SubCommand):
         else:
             return 'Unknown ubus method {}'.format(parsed.func)
 
-    def complete(self, text):
-        split = text.split(' ')
-        if len(split) > 1 and not split[0] in self._commands:
-            # unknown command
-            return
+    def complete(self, split):
+        LOG.warn("split %s" % split)
+        if not self.__paths:
+            self.update_paths()
+
         if len(split) == 1:
             return [s for s in self._commands if s.startswith(split[0])]
+        elif len(split) > 1 and not split[0] in self._commands:
+            LOG.warn("unknown cmd")
+            return
         elif len(split) == 2:
-            return [s for s in self.__objects if s.startswith(split[1])]
+            LOG.warn("paths {}".format(self.__paths))
+            return [s for s in self.__paths if s.startswith(split[1])]
         elif len(split) == 3:
             pass
 
