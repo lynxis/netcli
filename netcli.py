@@ -134,13 +134,12 @@ class SubCommand(object):
         pass
 
 class Ubus(SubCommand):
-    """ Ubus calls foo """
+    """ An interface to ubus """
     _commands = ['call', 'list']
 
     def __init__(self, ubus):
         self.__ubus = ubus
         self.__paths = {}
-        self.__objects = {}
 
     def update_paths(self):
         paths = self.__ubus.list()
