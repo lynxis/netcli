@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from pprint import pprint
 from jsonubus import JsonUbus
 import readline
 import logging
@@ -162,7 +163,7 @@ class Ubus(SubCommand):
             elif not parsed.method:
                 print('No method given!')
             else:
-                self.__ubus.callp(parsed.path, parsed.method, **convert_to_dict(leftover))
+                pprint(self.__ubus.callp(parsed.path, parsed.method, **convert_to_dict(leftover)))
         elif parsed.func[0] == 'list':
             if parsed.path:
                 print(self.__ubus.list(parsed.path))

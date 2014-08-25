@@ -56,9 +56,13 @@ class JsonUbus(Ubus):
             self.logger.info('Connected with {}'.format(self.url))
         return self.__session
 
-    def list(self, path=None):
-        if path:
-            return self._server.list(path)
+    def list(self, *args):
+        """ list() - returns all available paths
+            list('system', 'network') -> {'system': {}, 'network': {}}
+                returning dict only contains valid objects
+        """
+        if len(args):
+            return self._server.list(*args)
         else:
             return self._server.list()
 
@@ -91,3 +95,4 @@ if __name__ == '__main__':
     js = JsonUbus(url="http://192.168.122.175/ubus", user='root', password='yipyip')
     print(js.call('uci', 'configs'))
     print(js.call('uci', 'get', config='tests'))
+    print(js.list("system", "network"))
