@@ -138,10 +138,13 @@ class Ubus(SubCommand):
 
     def __init__(self, ubus):
         self.__ubus = ubus
-        self.__paths = []
+        self.__paths = {}
+        self.__objects = {}
 
     def update_paths(self):
-        self.__paths = self.__ubus.list()
+        paths = self.__ubus.list()
+        for path in paths:
+            self.__paths.update(self.__ubus.list(path))
 
     def dispatch(self, cmd, arguments):
         # func obj <opt args depends on func type>
@@ -169,20 +172,27 @@ class Ubus(SubCommand):
             return 'Unknown ubus method {}'.format(parsed.func)
 
     def complete(self, split):
-        LOG.warn("split %s" % split)
         if not self.__paths:
             self.update_paths()
 
-        if len(split) == 1:
-            return [s for s in self._commands if s.startswith(split[0])]
+        if len(split) == 1: # call or list
+            return [s + " " for s in self._commands if s.startswith(split[0])]
         elif len(split) > 1 and not split[0] in self._commands:
-            LOG.warn("unknown cmd")
             return
-        elif len(split) == 2:
-            LOG.warn("paths {}".format(self.__paths))
-            return [s for s in self.__paths if s.startswith(split[1])]
-        elif len(split) == 3:
-            pass
+        elif len(split) == 2: # e.g network or network.interface.lan
+            return [s + " " for s in self.__paths if s.startswith(split[1])]
+        elif len(split) > 2 and split[0] == 'list': # list only takes max 1 argument
+            return
+        elif len(split) == 3: # e.g. func of network -> status
+            if split[1] in self.__paths:
+                return [s + " " for s in self.__paths[split[1]] if s.startswith(split[2])]
+            return
+        elif len(split) > 3: # arguments of the func e.g. name=foooa
+            arg = split[-1]
+            if arg.find('=') == -1:
+                # we extend the argument name
+                return [s + "=" for s in self.__paths[split[1]][split[2]] if s.startswith(split[-1])]
+            return
 
 class Uci(SubCommand):
     pass
