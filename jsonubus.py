@@ -53,7 +53,7 @@ class JsonUbus(Ubus):
             self.__timeout = timedelta(seconds=ret[1]['timeout'])
             self.__expires = ret[1]['expires']
             self.__lastused = datetime.now()
-            self.logger.info('Connected with %s' % self.url)
+            self.logger.info('Connected with {}'.format(self.url))
         return self.__session
 
     def list(self, path=None):
@@ -63,7 +63,8 @@ class JsonUbus(Ubus):
             return self._server.list()
 
     def _handle_session_timeout(self):
-        self.logger.debug("Handle Session Timeout: %s + %s < %s", self.__lastused, self.__timeout, datetime.now())
+        self.logger.debug("Handle Session Timeout: {} + {} < {}".format(
+            self.__lastused, self.__timeout, datetime.now()))
         if (self.__lastused + self.__timeout) < datetime.now():
             self.__session = None
 
