@@ -79,11 +79,13 @@ class JsonUbus(Ubus):
         return self._server.call(self.session(), ubus_path, ubus_method, kwargs)
 
     def callp(self, ubus_path, ubus_method, **kwargs):
+        """ returns a human printable ubus response """
         response = self.call(ubus_path, ubus_method, **kwargs)
         if response[0] != 0:
-            print("Fail {}".format(MessageStatus(response[0])))
+            return "Fail {}".format(MessageStatus(response[0]))
         else:
-            print(response[1])
+            if len(response) > 1:
+                return response[1]
 
 if __name__ == '__main__':
     js = JsonUbus(url="http://192.168.122.175/ubus", user='root', password='yipyip')
