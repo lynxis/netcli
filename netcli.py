@@ -18,7 +18,7 @@ def convert_to_dict(argumentlist):
             raise RuntimeError("Invalid argument {}".format(keyval))
         return {keyval[:pos]:keyval[pos+1:]}
     converted = {}
-    for i in [gen_dict(part) for part in argumentlist]:
+    for i in [gen_dict(part) for part in argumentlist if len(part) > 0]:
         converted.update(i)
     return converted
 
@@ -68,7 +68,7 @@ class CliApp(object):
             if type(text) == str:
                 split = readline.get_line_buffer().split(' ')
                 if len(split) <= 1:
-                    self.__completer = [s for s in self.__commands if s.startswith(split[0])]
+                    self.__completer = [s + " " for s in self.__commands if s.startswith(split[0])]
                 else:
                     if split[0] in self.__command:
                         self.__completer = self.__command[split[0]].complete(split[1:])
@@ -77,7 +77,7 @@ class CliApp(object):
             else:
                 self.__completer = self.__commands
         try:
-            return self.__completer[state] + " "
+            return self.__completer[state]
         except IndexError:
             return None
 
